@@ -3,7 +3,7 @@ import numpy as np
 import medpy.io as medio
 join=os.path.join
 
-src_path = '../../../../DB/BraTS18/ori_data/Training'
+src_path = '../../../../DB/BraTS18/ori_data/BRATS2018_Validation'
 tar_path = '../../../../DB/BraTS18/ori_data/BRATS2018_Training_none_npy'
 
 HGG_list = os.listdir(join(src_path, 'HGG'))

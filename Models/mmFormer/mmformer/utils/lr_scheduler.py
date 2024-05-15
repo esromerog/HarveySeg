@@ -49,7 +49,7 @@ def Js_div(feat1, feat2, KLDivLoss):
 
     
 def mutual_learning_loss(mutual_feat, mask, KLDivLoss):
-    mutual_loss = torch.zeros(mask.size(0)).cuda()
+    mutual_loss = torch.zeros(mask.size(0))
     for i in range(mask.size(0)):
         K = torch.sum(mask[i])
         if K == 1:

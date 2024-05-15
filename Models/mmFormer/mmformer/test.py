@@ -25,8 +25,8 @@ if __name__ == '__main__':
     test_loader = MultiEpochsDataLoader(dataset=test_set, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)
 
     model = mmformer.Model(num_cls=num_cls)
-    model = torch.nn.DataParallel(model).cuda()
-    # model = model.cuda()
+    model = torch.nn.DataParallel(model)
+    # model = model
     checkpoint = torch.load(resume)
     model.load_state_dict(checkpoint['state_dict'])
 

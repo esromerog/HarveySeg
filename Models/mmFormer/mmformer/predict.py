@@ -129,7 +129,7 @@ def test_softmax(
     model.eval()
     vals_evaluation = AverageMeter()
     vals_separate = AverageMeter()
-    one_tensor = torch.ones(1, patch_size, patch_size, patch_size).float().cuda()
+    one_tensor = torch.ones(1, patch_size, patch_size, patch_size).float()
 
     if dataname in ['BRATS2021', 'BRATS2020', 'BRATS2018']:
         num_cls = 4
@@ -142,15 +142,15 @@ def test_softmax(
         
 
     for i, data in enumerate(test_loader):
-        target = data[1].cuda()
-        x = data[0].cuda()
+        target = data[1]
+        x = data[0]
         names = data[-1]
         if feature_mask is not None:
             mask = torch.from_numpy(np.array(feature_mask))
             mask = torch.unsqueeze(mask, dim=0).repeat(len(names), 1)
         else:
             mask = data[2]
-        mask = mask.cuda()
+        mask = mask
         _, _, H, W, Z = x.size()
         #########get h_ind, w_ind, z_ind for sliding windows
         h_cnt = np.int(np.ceil((H - patch_size) / (patch_size * (1 - 0.5))))
@@ -169,7 +169,7 @@ def test_softmax(
         z_idx_list.append(Z - patch_size)
 
         #####compute calculation times for each pixel in sliding windows
-        weight1 = torch.zeros(1, 1, H, W, Z).float().cuda()
+        weight1 = torch.zeros(1, 1, H, W, Z).float()
         for h in h_idx_list:
             for w in w_idx_list:
                 for z in z_idx_list:
@@ -177,7 +177,7 @@ def test_softmax(
         weight = weight1.repeat(len(names), num_cls, 1, 1, 1)
 
         #####evaluation
-        pred = torch.zeros(len(names), num_cls, H, W, Z).float().cuda()
+        pred = torch.zeros(len(names), num_cls, H, W, Z).float()
         model.module.is_training=False
         for h in h_idx_list:
             for w in w_idx_list:

@@ -83,7 +83,7 @@ def main():
         exit(0)
     model = mmformer.Model(num_cls=num_cls)
     print (model)
-    model = torch.nn.DataParallel(model).cuda()
+    model = torch.nn.DataParallel(model)
 
     ##########Setting learning schedule and optimizer
     lr_schedule = LR_Scheduler(args.lr, args.num_epochs)
@@ -168,15 +168,15 @@ def main():
             fuse_dice_loss = criterions.dice_loss(fuse_pred, target, num_cls=num_cls)
             fuse_loss = fuse_cross_loss + fuse_dice_loss
 
-            sep_cross_loss = torch.zeros(1).cuda().float()
-            sep_dice_loss = torch.zeros(1).cuda().float()
+            sep_cross_loss = torch.zeros(1).float()
+            sep_dice_loss = torch.zeros(1).float()
             for sep_pred in sep_preds:
                 sep_cross_loss += criterions.softmax_weighted_loss(sep_pred, target, num_cls=num_cls)
                 sep_dice_loss += criterions.dice_loss(sep_pred, target, num_cls=num_cls)
             sep_loss = sep_cross_loss + sep_dice_loss
 
-            prm_cross_loss = torch.zeros(1).cuda().float()
-            prm_dice_loss = torch.zeros(1).cuda().float()
+            prm_cross_loss = torch.zeros(1).float()
+            prm_dice_loss = torch.zeros(1).float()
             for prm_pred in prm_preds:
                 prm_cross_loss += criterions.softmax_weighted_loss(prm_pred, target, num_cls=num_cls)
                 prm_dice_loss += criterions.dice_loss(prm_pred, target, num_cls=num_cls)

@@ -113,7 +113,7 @@ def compute_weights(data):
             return rj["functional cortical areas"]
         if "fibers" in label:
             return rj["white matter fibers"]
-        return 0
+        return 0.1 # Default value if no specific rj value found
 
 
     # Function to get ajk value based on label
@@ -190,21 +190,20 @@ full_seg_voxels = full_seg_load.get_fdata()
 with open('tissue_labels.json', 'r') as file:
     data = json.load(file)
 
-tumor_seg_combine = np.zeros(full_seg_voxels.shape)
+# tumor_seg_combine = np.zeros(full_seg_voxels.shape)
 tissue_weights = compute_weights(data)
+tumor_seg_combine = np.where(full_seg_voxels != 0, 0.025, 0)
 
 # Loop through the dictionary to replace values within the array
 for value in tissue_weights:
     weight = value["Weight"]
+    if value["Region"] == "Tumor":
+        weight = -0.1
+    if value["Region"] == "wmsa":
+        weight = 0.025
     tissue_indx = int(value["Index"])
-    if value["Region"] not in ["Tumor", "wmsa"]:
-        tumor_seg_combine += np.where(full_seg_voxels == tissue_indx, weight, 0)
-    elif value["Region"] == "Tumor":
-        tumor_seg_combine += np.where(full_seg_voxels == tissue_indx, -0.1, 0)
-    elif value["Region"] == "wmsa":
-        tumor_seg_combine += np.where(full_seg_voxels == tissue_indx, 0.025, 0)
-    else:
-        tumor_seg_combine += 0
+    tumor_seg_combine[full_seg_voxels == tissue_indx] = weight
+
 
 print(np.unique(tumor_seg_combine))
 nib_path = '/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Predictions/WeightedSegmentation_001_Test.nii.gz'

@@ -40,21 +40,26 @@ class Brats_loadall_nii(Dataset):
 
         '''Yao'''
         patients_dir = glob.glob(join(root, 'vol', '*_vol.npy'))
+        
         patients_dir.sort(key=lambda x: x.split('/')[-1][:-8])
         print('###############', len(patients_dir))
         n_patients = len(patients_dir)
         pid_idx = np.arange(n_patients)
         np.random.seed(0)
         np.random.shuffle(pid_idx)
-        n_fold_list = np.split(pid_idx, 3)
-
+        n_fold_list = np.split(pid_idx, 1)
+        print("patients_dir", patients_dir)
+        print("n_fold_list", n_fold_list)
         volpaths = []
         for i, fold in enumerate(n_fold_list):
-            if i != 0:
-                for idx in fold:
-                    volpaths.append(patients_dir[idx])
+            for idx in fold:
+                print("idx", idx)
+                volpaths.append(patients_dir[idx])
+
+        print(volpaths)
         datalist = [x.split('/')[-1].split('_vol')[0] for x in volpaths]
         '''Yao'''
+        print("Datalist", datalist)
 
         self.volpaths = volpaths
         self.transforms = eval(transforms or 'Identity()')
@@ -119,7 +124,7 @@ class Brats_loadall_test_nii(Dataset):
         pid_idx = np.arange(n_patients)
         np.random.seed(0)
         np.random.shuffle(pid_idx)
-        n_fold_list = np.split(pid_idx, 3)
+        n_fold_list = np.split(pid_idx, 1)
 
         volpaths = []
         for i, fold in enumerate(n_fold_list):
@@ -160,6 +165,7 @@ class Brats_loadall_test_nii(Dataset):
         x = torch.squeeze(torch.from_numpy(x), dim=0)
         y = torch.squeeze(torch.from_numpy(y), dim=0)
 
+        print("x_shape brats_loadall_test_nii", x.shape)
         return x, y, name
 
     def __len__(self):

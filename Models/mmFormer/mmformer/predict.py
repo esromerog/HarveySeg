@@ -150,22 +150,24 @@ def test_softmax(
             mask = torch.unsqueeze(mask, dim=0).repeat(len(names), 1)
         else:
             mask = data[2]
+
         mask = mask
         _, _, H, W, Z = x.size()
+
         #########get h_ind, w_ind, z_ind for sliding windows
-        h_cnt = np.int(np.ceil((H - patch_size) / (patch_size * (1 - 0.5))))
+        h_cnt = np.int32(np.ceil((H - patch_size) / (patch_size * (1 - 0.5))))
         h_idx_list = range(0, h_cnt)
-        h_idx_list = [h_idx * np.int(patch_size * (1 - 0.5)) for h_idx in h_idx_list]
+        h_idx_list = [h_idx * np.int32(patch_size * (1 - 0.5)) for h_idx in h_idx_list]
         h_idx_list.append(H - patch_size)
 
-        w_cnt = np.int(np.ceil((W - patch_size) / (patch_size * (1 - 0.5))))
+        w_cnt = np.int32(np.ceil((W - patch_size) / (patch_size * (1 - 0.5))))
         w_idx_list = range(0, w_cnt)
-        w_idx_list = [w_idx * np.int(patch_size * (1 - 0.5)) for w_idx in w_idx_list]
+        w_idx_list = [w_idx * np.int32(patch_size * (1 - 0.5)) for w_idx in w_idx_list]
         w_idx_list.append(W - patch_size)
 
-        z_cnt = np.int(np.ceil((Z - patch_size) / (patch_size * (1 - 0.5))))
+        z_cnt = np.int32(np.ceil((Z - patch_size) / (patch_size * (1 - 0.5))))
         z_idx_list = range(0, z_cnt)
-        z_idx_list = [z_idx * np.int(patch_size * (1 - 0.5)) for z_idx in z_idx_list]
+        z_idx_list = [z_idx * np.int32(patch_size * (1 - 0.5)) for z_idx in z_idx_list]
         z_idx_list.append(Z - patch_size)
 
         #####compute calculation times for each pixel in sliding windows
@@ -175,6 +177,7 @@ def test_softmax(
                 for z in z_idx_list:
                     weight1[:, :, h:h+patch_size, w:w+patch_size, z:z+patch_size] += one_tensor
         weight = weight1.repeat(len(names), num_cls, 1, 1, 1)
+
 
         #####evaluation
         pred = torch.zeros(len(names), num_cls, H, W, Z).float()
@@ -189,6 +192,9 @@ def test_softmax(
         b = time.time()
         pred = pred[:, :, :H, :W, :T]
         pred = torch.argmax(pred, dim=1)
+        print("pred_size", pred.shape)
+
+        np.save("/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Predictions/mmFormer/Result"+str(np.random.randint(1, 101))+".npy", pred)
 
         if dataname in ['BRATS2021', 'BRATS2020', 'BRATS2018']:
             scores_separate, scores_evaluation = softmax_output_dice_class4(pred, target)

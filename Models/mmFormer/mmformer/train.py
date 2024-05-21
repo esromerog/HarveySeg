@@ -102,6 +102,8 @@ def main():
     logging.info(str(args))
     train_set = Brats_loadall_nii(transforms=args.train_transforms, root=args.datapath, num_cls=num_cls, train_file=train_file)
     test_set = Brats_loadall_test_nii(transforms=args.test_transforms, root=args.datapath, test_file=test_file)
+    print("Train set", train_set)
+    print("Test set", test_set)
     train_loader = MultiEpochsDataLoader(
         dataset=train_set,
         batch_size=args.batch_size,
@@ -118,7 +120,7 @@ def main():
 
     ##########Evaluate
     if args.resume is not None:
-        checkpoint = torch.load(args.resume)
+        checkpoint = torch.load(args.resume, map_location=torch.device('cpu'))
         logging.info('best epoch: {}'.format(checkpoint['epoch']))
         model.load_state_dict(checkpoint['state_dict'])
         # test_score = AverageMeter()

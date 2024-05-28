@@ -18,34 +18,11 @@ import mmformer
 from data.transforms import Compose
 import preprocess
 
-src_path="/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Raw/BraTS20_Training_001/BraTS20_Training_001"
+# src_path="/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Raw/BraTS20_Training_001/BraTS20_Training_001"
 model_path = "/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Models/mmFormer/mmformer/output/model_last.pth"
 output_path = "/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Predictions/mmFormer/rawArray.npy"
 
-'''
-def preprocessing():
-    tar_path="/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Preprocessed"
-    flair, flair_header = medio.load(src_path+'_flair.nii.gz')
-    t1ce, t1ce_header = medio.load(src_path+'_t1ce.nii.gz')
-    t1, t1_header = medio.load(src_path+'_t1.nii.gz')
-    t2, t2_header = medio.load(src_path+'_t2.nii.gz')
-
-    vol = np.stack((flair, t1ce, t1, t2), axis=0).astype(np.float32)
-    x_min, x_max, y_min, y_max, z_min, z_max = preprocess.crop(vol)
-    vol1 = preprocess.normalize(vol[:, x_min:x_max, y_min:y_max, z_min:z_max])
-    vol1 = vol1.transpose(1,2,3,0)
-    print(vol1.shape)
-
-    seg, seg_header = medio.load(src_path+'_seg.nii.gz')
-    seg = seg.astype(np.uint8)
-    seg1 = seg[x_min:x_max, y_min:y_max, z_min:z_max]
-    seg1[seg1==4]=3
-
-    np.save(tar_path+'/mmFormer/BRATS2020_001_Preprocess_vol.npy', vol1)
-    np.save(tar_path+'/mmFormer/BRATS2020_001_Preprocess_seg.npy', seg1)
-'''
-
-def preprocessing(mask):
+def preprocessing(mask, src_path):
 
     mask_name = ['flair', 't1ce', 't1', 't2']
     modality_array = [None] * len(mask_name)
@@ -136,7 +113,6 @@ def make_prediction(
                 pred_part = model(x_input, mask)
                 pred[:, :, h:h+patch_size, w:w+patch_size, z:z+patch_size] += pred_part
     pred = pred / weight
-    b = time.time()
     pred = pred[:, :, :H, :W, :T]
     pred = torch.argmax(pred, dim=1)
 
@@ -180,13 +156,13 @@ def uncrop(cropped_vol, original_shape, x_min, x_max, y_min, y_max, z_min, z_max
     return uncropped_vol
 
     
-def visualize_results():
+def _plot_results(prediction_results, src_path, target_path):
     # Size stats
     # [49, 185, 42, 214, 4, 138, (240, 240, 155)]
-    output_data = np.load(output_path)
-    output_data = np.squeeze(output_data, axis=0)
+    # output_data = np.load(output_path)
+    output_data = np.squeeze(prediction_results, axis=0)
     
-    og_data_load = nib.load("/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Raw/BraTS20_Training_001/BraTS20_Training_001_t1ce.nii.gz")
+    og_data_load = nib.load(src_path)
     og_data = og_data_load.get_fdata()
 
     new_vol=uncrop(output_data, og_data.shape, 49, 185, 42, 214, 4, 138)
@@ -194,35 +170,56 @@ def visualize_results():
     #plt.show()
 
     img = nib.Nifti1Image(new_vol.astype(np.int32), og_data_load.affine)
-    nib.save(img, '/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Predictions/mmFormer/TumorSegmentation.nii.gz')
+    nib.save(img, target_path)
 
 
-
-def main():
+def segment_tumor(source_path, output_path, model_checkpoint_path, modalities):
+    # Ensure reproducibility and performance consistency
     cudnn.benchmark = False
     cudnn.deterministic = True
 
-    model = mmformer.Model(num_cls = 4)
+    # Initialize the model
+    model = mmformer.Model(num_cls=4)
     model = torch.nn.DataParallel(model)
 
+    # Load the trained model checkpoint
     map_location = get_map_location()
-    checkpoint = torch.load(model_path, map_location=torch.device(map_location))
-    logging.info('best epoch: {}'.format(checkpoint['epoch']))
+    checkpoint = torch.load(model_checkpoint_path, map_location=torch.device(map_location))
+    logging.info('Best epoch: {}'.format(checkpoint['epoch']))
     model.load_state_dict(checkpoint['state_dict'])
 
-    ##########Training
-    start = time.time()
+    # Record start time
+    start_time = time.time()
     torch.set_grad_enabled(True)
 
-    mask = get_mask_from_modalities(['t1ce'])
-    x, size_stats = preprocessing(mask)
-    pred = make_prediction(x_input=x, model=model, feature_mask=mask)
+    # Obtain mask from the specified modalities
+    modality_mask = get_mask_from_modalities(modalities)  # Add location and loading here
 
-    print("Prediction done")
-    x_min, x_max, y_min, y_max, z_min, z_max, default_shape = size_stats
-    print(size_stats)
-    uncropped = uncrop(torch.squeeze(pred, dim=0), default_shape, x_min, x_max, y_min, y_max, z_min, z_max)
-    np.save(output_path, pred)
+    # Preprocess the input data
+    preprocessed_input, size_statistics = preprocessing(modality_mask, source_path)
+
+    # Make prediction using the model
+    prediction = make_prediction(x_input=preprocessed_input, model=model, feature_mask=modality_mask)
+
+    print("Tumor inference done")
+
+    # Extract size statistics for uncropping
+    x_min, x_max, y_min, y_max, z_min, z_max, original_shape = size_statistics
+
+    # Uncrop the prediction to match the original image dimensions
+    uncropped_prediction = uncrop(
+        torch.squeeze(prediction, dim=0),
+        original_shape,
+        x_min, x_max, y_min, y_max, z_min, z_max
+    )
+
+    # Save the prediction as a NIfTI image
+    nifti_image = nib.Nifti1Image(uncropped_prediction.astype(np.int32), og_data_load.affine)
+    nib.save(nifti_image, output_path)
     
 if __name__ == '__main__':
-    visualize_results()
+    src_path="/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Raw/BraTS20_Training_001/BraTS20_Training_001"
+    model_path = "/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Models/mmFormer/mmformer/output/model_last.pth"
+    output_path = "/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Predictions/mmFormer/TumorSegmentation.nii.gz"
+
+    segment_tumor(src_path, output_path, model_path, ['t1ce'])

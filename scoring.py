@@ -84,7 +84,7 @@ def compute_weights(data):
         "ventricles": 0.1,
         "white matter fibers": 0.2,
         "functional cortical areas": 0.3,
-        "blood vessels": 0.4,
+        "blood vessels": 0.4, # Not in segmentation
         "critical region": 1,
     }
     
@@ -102,7 +102,7 @@ def compute_weights(data):
             "sensory fibers": 0.3,
             "motor fibers": 0.4
         },
-        "blood vessels": 0.25,
+        "blood vessels": 0.25, # Not in segmentation
         "critical region": 0.25,
     }
 

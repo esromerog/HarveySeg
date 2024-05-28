@@ -1,6 +1,4 @@
-./mmFormer/Dataset
-./mmFormer/mmFormer/output/model_last.pth
-/mmFormer/mmFormer/output/model_last.pth
+/Models/mmFormer/mmformer/output/model_last.pth
 
 ./Models/mmFormer/mmformer/output/model_last.pth
 /Models/mmFormer/mmformer/output/model_last.pth

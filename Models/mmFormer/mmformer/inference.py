@@ -18,10 +18,6 @@ import mmformer
 from data.transforms import Compose
 import preprocess
 
-# src_path="/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Raw/BraTS20_Training_001/BraTS20_Training_001"
-model_path = "/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Models/mmFormer/mmformer/output/model_last.pth"
-output_path = "/Users/esromerog/Developer/Galen/Segmentation/FNL/GitRepo/Data/Predictions/mmFormer/rawArray.npy"
-
 def preprocessing(mask, src_path):
 
     mask_name = ['flair', 't1ce', 't1', 't2']
